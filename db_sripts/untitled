@@ -1,0 +1,32 @@
+CREATE TABLE person(
+   id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+   name TEXT NOT NULL,
+   second_name TEXT NOT NULL,
+   surname TEXT NOT NULL,
+   street TEXT NOT NULL,
+   house TEXT NOT NULL,
+   building TEXT NOT NULL,
+   ph_home TEXT,
+   ph_mobile TEXT,
+   ph_work TEXT,
+   email TEXT
+);
+
+CREATE TABLE debts(
+   id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+   year INTEGER,
+   month INTEGER,
+   period TEXT,
+   type TEXT,
+   sum REAL,
+   person_id INTEGER,
+   FOREIGN KEY (person_id) REFERENCES person(id)
+);
+
+CREATE TABLE target_contribution(
+   id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+   name TEXT,
+   sum REAL,
+   person_id INTEGER,
+   FOREIGN KEY (person_id) REFERENCES person(id)
+);
