@@ -86,14 +86,14 @@ class ClientCard(qg.QMainWindow, cci.Ui_MainWindow):
 
     def saveInfo(self):
         client_fields = self.getPersonInfo()
-        debtfront_fields = self.getTableInfo(self.tbl_front ,2, 13, 1, self.tbl_front.columnCount(), self.getFrontCell)
-        debtback1_fields = self.getTableInfo(self.tbl_back1, 1, self.tbl_back1.rowCount(), 0, self.tbl_back1.columnCount(), self.getBack1Cell)
+        payment_fields = self.getTableInfo(self.tbl_front ,2, 13, 1, self.tbl_front.columnCount(), self.getFrontCell)
+        debt_fields = self.getTableInfo(self.tbl_back1, 1, self.tbl_back1.rowCount(), 0, self.tbl_back1.columnCount(), self.getBack1Cell)
         target_contribution_fields = self.getTableInfo(self.tbl_back2, 1, self.tbl_back2.rowCount(), 0, self.tbl_back2.columnCount(), self.getBack2Cell)
-        if (client_fields is not None) and (debtfront_fields is not None) and (debtback1_fields is not None) and (target_contribution_fields is not None):
+        if (client_fields is not None) and (payment_fields is not None) and (debt_fields is not None) and (target_contribution_fields is not None):
             if (self.id == 0):
                 person_id = db.insert_person(client_fields)
-                for el in debtfront_fields: db.insert_debt(el, person_id)
-                for el in debtback1_fields: db.insert_debt(el, person_id)
+                for el in payment_fields: db.insert_payment(el, person_id)
+                for el in debt_fields: db.insert_debt(el, person_id)
                 for el in target_contribution_fields: db.insert_target_contribution(el, self.id)
                 info_str = u"Данные клиента "+qstr_to_str(client_fields.get("name")+" "+client_fields.get("surname")) + u" успешно добавлены в базу данных."
                 self.showDialog(qg.QMessageBox.Information,info_str,u"Клиент добавлен")
@@ -101,8 +101,9 @@ class ClientCard(qg.QMainWindow, cci.Ui_MainWindow):
                 db.update_person(client_fields, self.id)
                 db.delete_target_contribution_by_id(self.id)
                 db.delete_debts_by_id(self.id)
-                for el in debtfront_fields: db.insert_debt(el, self.id)
-                for el in debtback1_fields: db.insert_debt(el, self.id)
+                db.delete_payments_by_id(self.id)
+                for el in payment_fields: db.insert_payment(el, self.id)
+                for el in debt_fields: db.insert_debt(el, self.id)
                 for el in target_contribution_fields: db.insert_target_contribution(el, self.id)
                 info_str = u"Данные клиента "+qstr_to_str(client_fields.get("name")+" "+client_fields.get("surname")) + u" успешно отредактированы."
                 self.showDialog(qg.QMessageBox.Information,info_str,u"Данные обновлены")
@@ -139,7 +140,6 @@ class ClientCard(qg.QMainWindow, cci.Ui_MainWindow):
         if (txt != '0') and (txt != ''):
             fields["year"] = self.spn_year.value()
             fields["month"] = i - 1
-            fields["period"] = ""
             fields["type"] = tbl.item(0,j).text()
             try:
                 fields["sum"] = float(tbl.item(i,j).text())
@@ -159,8 +159,6 @@ class ClientCard(qg.QMainWindow, cci.Ui_MainWindow):
                 self.showDialog(qg.QMessageBox.Critical,u"Некорректный формат ввода периода в таблице _Расшифровка задолженности на начало года_. Необходим формат: мм.гг-мм.гг",u"Ошибка")
                 return False
             if (txt != '0') and (txt != ''):
-                fields["year"] = ""
-                fields["month"] = ""
                 fields["period"] = period
                 fields["type"] = tbl.item(0,j).text()
                 try:
@@ -223,11 +221,12 @@ class ClientCard(qg.QMainWindow, cci.Ui_MainWindow):
         else:
             self.id = self.window2.id_lst[indexes[0].row()-1]
             client_info = db.get_person_by_id(self.id)
-            current_year, past_years = split_debts(db.get_debts_by_id(self.id), int(self.spn_year.value()))
+            payments = db.get_payments_by_id(self.id)
+            past_years = db.get_debts_by_id(self.id)
             target_contribution_info = db.get_target_contribution_by_id(self.id)
             self.setPersonInfo(client_info)
             self.setTableInfo(target_contribution_info, self.tbl_back2, 1, self.tbl_back2.rowCount(), self.setBack2Row)
-            self.setTableInfo(current_year, self.tbl_front, 1, 100, self.setFrontRow)
+            self.setTableInfo(payments, self.tbl_front, 1, 100, self.setFrontRow)
             self.setTableInfo(past_years, self.tbl_back1, 1, 100, self.setBack1Row)
             self.window2.close()
 

@@ -44,16 +44,27 @@ def insert_person(db, cursor, fields):
     qstr_to_str(fields.get("email")),)
     )
     db.commit()
-    cursor.execute("""select Count(*) as id FROM person""")
+    cursor.execute("""select * FROM person ORDER BY id DESC LIMIT 1""")
     return cursor.fetchone()["id"]
 
 @db_decorator
-def insert_debt(db, cursor, fields,person_id):
-    cursor.execute("""insert into debts (year, month, period, type, sum, person_id) 
-        values (?,?,?,?,?,?)""",
+def insert_payment(db, cursor, fields,person_id):
+    cursor.execute("""insert into payments (year, month, type, sum, person_id) 
+        values (?,?,?,?,?)""",
      (qstr_to_str(fields.get("year")),
     qstr_to_str(fields.get("month")),
-    qstr_to_str(fields.get("period")),
+    qstr_to_str(fields.get("type")),
+    qstr_to_str(fields.get("sum")),
+    person_id,)
+    )
+    db.commit()
+    return cursor.rowcount > 0
+
+@db_decorator
+def insert_debt(db, cursor, fields,person_id):
+    cursor.execute("""insert into debts (period, type, sum, person_id) 
+        values (?,?,?,?)""",
+     (qstr_to_str(fields.get("period")),
     qstr_to_str(fields.get("type")),
     qstr_to_str(fields.get("sum")),
     person_id,)
@@ -92,8 +103,14 @@ def update_person(db, cursor, fields, pers_id):
     return cursor.rowcount > 0
 
 @db_decorator
+def get_persons(db, cursor):
+    cursor.execute("""select * from person""",
+    )
+    return cursor.fetchall()
+
+@db_decorator
 def get_person_by_name(db, cursor, name):
-    cursor.execute("""select id, name, second_name, surname, ph_mobile from person where surname=(?)""",
+    cursor.execute("""select id, name, second_name, surname, ph_mobile from person where surname like (?)""",
      (qstr_to_str(name),)
     )
     return cursor.fetchall()
@@ -106,8 +123,15 @@ def get_person_by_id(db, cursor, person_id):
     return cursor.fetchone()
 
 @db_decorator
+def get_payments_by_id(db, cursor, person_id):
+    cursor.execute("""select year, month, type, sum from payments where person_id=(?)""",
+     (person_id,)
+    )
+    return cursor.fetchall()
+
+@db_decorator
 def get_debts_by_id(db, cursor, person_id):
-    cursor.execute("""select year, month, period, type, sum from debts where person_id=(?)""",
+    cursor.execute("""select period, type, sum from debts where person_id=(?)""",
      (person_id,)
     )
     return cursor.fetchall()
@@ -120,8 +144,16 @@ def get_target_contribution_by_id(db, cursor, person_id):
     return cursor.fetchall()
 
 @db_decorator
-def delete_target_contribution_by_id(db, cursor, person_id):
-    cursor.execute("""delete from target_contribution where person_id =(?)""",
+def delete_person_by_id(db, cursor, person_id):
+    cursor.execute("""delete from person where id =(?)""",
+     (person_id,)
+    )
+    db.commit()
+    return cursor.rowcount
+
+@db_decorator
+def delete_payments_by_id(db, cursor, person_id):
+    cursor.execute("""delete from payments where person_id =(?)""",
      (person_id,)
     )
     db.commit()
@@ -136,8 +168,8 @@ def delete_debts_by_id(db, cursor, person_id):
     return cursor.rowcount
 
 @db_decorator
-def delete_person_by_id(db, cursor, person_id):
-    cursor.execute("""delete from person where id =(?)""",
+def delete_target_contribution_by_id(db, cursor, person_id):
+    cursor.execute("""delete from target_contribution where person_id =(?)""",
      (person_id,)
     )
     db.commit()
