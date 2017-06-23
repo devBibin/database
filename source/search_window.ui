@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>542</width>
-    <height>384</height>
+    <width>1039</width>
+    <height>394</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,9 +17,9 @@
    <widget class="QTableWidget" name="tbl_search_res">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>60</y>
-      <width>361</width>
+      <x>10</x>
+      <y>100</y>
+      <width>1011</width>
       <height>231</height>
      </rect>
     </property>
@@ -69,37 +69,24 @@
      <bool>false</bool>
     </attribute>
    </widget>
-   <widget class="QPushButton" name="btn_search">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>300</y>
-      <width>181</width>
-      <height>41</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Поиск</string>
-    </property>
-   </widget>
    <widget class="QLabel" name="label">
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>30</y>
-      <width>59</width>
-      <height>15</height>
+      <y>20</y>
+      <width>81</width>
+      <height>16</height>
      </rect>
     </property>
     <property name="text">
-     <string>Фио:</string>
+     <string>Фамилия:</string>
     </property>
    </widget>
    <widget class="QLineEdit" name="ln_name">
     <property name="geometry">
      <rect>
-      <x>80</x>
-      <y>30</y>
+      <x>110</x>
+      <y>20</y>
       <width>113</width>
       <height>23</height>
      </rect>
@@ -108,14 +95,40 @@
    <widget class="QPushButton" name="btn_edit">
     <property name="geometry">
      <rect>
-      <x>220</x>
-      <y>302</y>
+      <x>20</x>
+      <y>340</y>
       <width>121</width>
       <height>31</height>
      </rect>
     </property>
     <property name="text">
      <string>Редактировать</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_2">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>50</y>
+      <width>81</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Адрес:</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="ln_adress">
+    <property name="geometry">
+     <rect>
+      <x>110</x>
+      <y>50</y>
+      <width>113</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
     </property>
    </widget>
   </widget>

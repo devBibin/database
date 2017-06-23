@@ -4,7 +4,8 @@
 from PyQt4 import QtGui as qg
 from PyQt4 import QtCore
 import card_client_interface as cci
-import search_client_handler as sci
+import search_client_handler as sch
+import add_debt_handler as adh
 import db_methods as db
 from utils import *
 
@@ -27,7 +28,7 @@ class ClientCard(qg.QMainWindow, cci.Ui_MainWindow):
         self.front_table_upper = [ u"Наименование"+"\n"+u"платежей",
         u"Членские взносы"+"\n"+u"руб.",
         u"Уличное"+"\n"+u"освещение, руб.",
-        u"Целевые"+"\n"+u"взносы, руб."]
+        u"Вывоз"+"\n"+u"мусора, руб."]
 
         self.front_table_side = [u"Задолженнность"+"\n"+u"на начало года",
         u"Январь",
@@ -77,6 +78,7 @@ class ClientCard(qg.QMainWindow, cci.Ui_MainWindow):
         self.btn_search.clicked.connect(self.showSearchWindow)
         self.btn_add_back1.clicked.connect(self.addBack1Row)
         self.btn_add_back2.clicked.connect(self.addBack2Row)
+        self.spn_year.valueChanged.connect(self.updClientCard)
 
     def addBack1Row(self):
         self.tbl_back1.setRowCount(self.tbl_back1.rowCount()+ 1)
@@ -86,24 +88,23 @@ class ClientCard(qg.QMainWindow, cci.Ui_MainWindow):
 
     def saveInfo(self):
         client_fields = self.getPersonInfo()
-        payment_fields = self.getTableInfo(self.tbl_front ,2, 13, 1, self.tbl_front.columnCount(), self.getFrontCell)
-        debt_fields = self.getTableInfo(self.tbl_back1, 1, self.tbl_back1.rowCount(), 0, self.tbl_back1.columnCount(), self.getBack1Cell)
+        debtfront_fields = self.getTableInfo(self.tbl_front ,2, 13, 1, self.tbl_front.columnCount(), self.getFrontCell)
+        debtback1_fields = self.getTableInfo(self.tbl_back1, 1, self.tbl_back1.rowCount(), 0, self.tbl_back1.columnCount(), self.getBack1Cell)
         target_contribution_fields = self.getTableInfo(self.tbl_back2, 1, self.tbl_back2.rowCount(), 0, self.tbl_back2.columnCount(), self.getBack2Cell)
-        if (client_fields is not None) and (payment_fields is not None) and (debt_fields is not None) and (target_contribution_fields is not None):
+        if (client_fields is not None) and (debtfront_fields is not None) and (debtback1_fields is not None) and (target_contribution_fields is not None):
             if (self.id == 0):
                 person_id = db.insert_person(client_fields)
-                for el in payment_fields: db.insert_payment(el, person_id)
-                for el in debt_fields: db.insert_debt(el, person_id)
+                for el in debtfront_fields: db.insert_debt(el, person_id)
+                for el in debtback1_fields: db.insert_debt(el, person_id)
                 for el in target_contribution_fields: db.insert_target_contribution(el, self.id)
                 info_str = u"Данные клиента "+qstr_to_str(client_fields.get("name")+" "+client_fields.get("surname")) + u" успешно добавлены в базу данных."
                 self.showDialog(qg.QMessageBox.Information,info_str,u"Клиент добавлен")
             else:
                 db.update_person(client_fields, self.id)
                 db.delete_target_contribution_by_id(self.id)
-                db.delete_debts_by_id(self.id)
-                db.delete_payments_by_id(self.id)
-                for el in payment_fields: db.insert_payment(el, self.id)
-                for el in debt_fields: db.insert_debt(el, self.id)
+                db.delete_debts_by_id(self.id, int(self.spn_year.value()))
+                for el in debtfront_fields: db.insert_debt(el, self.id)
+                for el in debtback1_fields: db.insert_debt(el, self.id)
                 for el in target_contribution_fields: db.insert_target_contribution(el, self.id)
                 info_str = u"Данные клиента "+qstr_to_str(client_fields.get("name")+" "+client_fields.get("surname")) + u" успешно отредактированы."
                 self.showDialog(qg.QMessageBox.Information,info_str,u"Данные обновлены")
@@ -121,6 +122,8 @@ class ClientCard(qg.QMainWindow, cci.Ui_MainWindow):
         fields["street"] = self.ln_street.text()
         fields["house"] = self.ln_house.text()
         fields["building"]  = self.ln_building.text()
+        fields["is_TSG_member"] = self.chck_is_member.isChecked()
+        fields["is_rubbish_user"] = self.chck_is_rubbish.isChecked()
         return fields
 
     def getTableInfo(self, tbl, start_row, finish_row, start_column, finish_column, getfields):
@@ -140,6 +143,7 @@ class ClientCard(qg.QMainWindow, cci.Ui_MainWindow):
         if (txt != '0') and (txt != ''):
             fields["year"] = self.spn_year.value()
             fields["month"] = i - 1
+            fields["period"] = ""
             fields["type"] = tbl.item(0,j).text()
             try:
                 fields["sum"] = float(tbl.item(i,j).text())
@@ -159,6 +163,8 @@ class ClientCard(qg.QMainWindow, cci.Ui_MainWindow):
                 self.showDialog(qg.QMessageBox.Critical,u"Некорректный формат ввода периода в таблице _Расшифровка задолженности на начало года_. Необходим формат: мм.гг-мм.гг",u"Ошибка")
                 return False
             if (txt != '0') and (txt != ''):
+                fields["year"] = ""
+                fields["month"] = ""
                 fields["period"] = period
                 fields["type"] = tbl.item(0,j).text()
                 try:
@@ -191,44 +197,80 @@ class ClientCard(qg.QMainWindow, cci.Ui_MainWindow):
         self.ln_street.setText(  fields["street"]) 
         self.ln_house.setText(fields["house"]) 
         self.ln_building.setText( fields["building"])
+        self.chck_is_member.setChecked(fields["is_TSG_member"]) 
+        self.chck_is_rubbish.setChecked(fields["is_rubbish_user"]) 
 
-    def setTableInfo(self, fields_list, tbl, start_row, finish_row, setData):
-        if (finish_row - start_row < len(fields_list)):
-            tbl.setRowCount(len(fields_list) + 1)
+    def setTableInfo(self, fields_list, tbl, setData, start_row = 0, finish_row = float("Inf")):
         i = start_row
         for el in (fields_list):
-            setData(el, i, tbl)
+            row = setData(el, i, tbl)
             i = i + 1
 
     def setFrontRow(self, fields, i, tbl):
         row = fields.get("month") + 1
         column = self.front_table_upper.index(fields.get("type"))
         tbl.setItem(row,column,qg.QTableWidgetItem(str(fields.get("sum"))))
+        return row
+
+    def getperiodRow(self, tbl, period):
+        for i in range (1, tbl.rowCount()):
+            if (qstr_to_str(tbl.item(i,0).text()) == period):
+                return i
+            if (qstr_to_str(tbl.item(i,0).text()) == ""):
+                return i
+        return i
 
     def setBack1Row(self, fields, i, tbl):
-        tbl.setItem(i,0,qg.QTableWidgetItem(fields.get("period")))
+        row = self.getperiodRow(tbl, fields.get("period"))
+        tbl.setItem(row,0,qg.QTableWidgetItem(fields.get("period")))
         column = self.back1_table_upper.index(fields.get("type"))
-        tbl.setItem(i,column,qg.QTableWidgetItem(str(fields.get("sum"))))
+        tbl.setItem(row,column,qg.QTableWidgetItem(str(fields.get("sum"))))
+        return row
 
     def setBack2Row(self, fields, i, tbl):
         tbl.setItem(i,0,qg.QTableWidgetItem(fields.get("name")))
         tbl.setItem(i,1,qg.QTableWidgetItem(str(fields.get("sum"))))
+        return i
+
+    def updClientCard(self):
+        self.cleanTable(self.tbl_front, 1)
+        self.cleanTable(self.tbl_back1, 0)
+        self.setUneditableFrontItems(self.tbl_front)
+        if (self.id != 0):
+            current_year_debts, defined_debts, calculated_debts= split_debts(db.get_debts_by_id(self.id), int(self.spn_year.value()))
+            self.setTableInfo(current_year_debts, self.tbl_front, self.setFrontRow, 1)
+            self.setTableInfo(defined_debts, self.tbl_back1, self.setBack1Row, 1)
+            self.calculateFrontTable(defined_debts, calculated_debts, current_year_debts)
 
     def showClientCard(self):
         indexes = self.window2.tbl_search_res.selectionModel().selectedRows()
         if (len(indexes) > 1):
-            self.showDialog(qg.QMessageBox.Critical,u"Были выбраны несколько карточек клиента. Пожалуйста, выберете одну.",u"Ошибка")
+            self.showAddDebtsWindow()
         else:
             self.id = self.window2.id_lst[indexes[0].row()-1]
             client_info = db.get_person_by_id(self.id)
-            payments = db.get_payments_by_id(self.id)
-            past_years = db.get_debts_by_id(self.id)
+            current_year_debts, defined_debts, calculated_debts= split_debts(db.get_debts_by_id(self.id), int(self.spn_year.value()))
             target_contribution_info = db.get_target_contribution_by_id(self.id)
             self.setPersonInfo(client_info)
-            self.setTableInfo(target_contribution_info, self.tbl_back2, 1, self.tbl_back2.rowCount(), self.setBack2Row)
-            self.setTableInfo(payments, self.tbl_front, 1, 100, self.setFrontRow)
-            self.setTableInfo(past_years, self.tbl_back1, 1, 100, self.setBack1Row)
+            self.setTableInfo(target_contribution_info, self.tbl_back2, self.setBack2Row, 1, self.tbl_back2.rowCount())
+            self.setTableInfo(current_year_debts, self.tbl_front, self.setFrontRow, 1)
+            self.setTableInfo(defined_debts, self.tbl_back1, self.setBack1Row, 1)
+            self.calculateFrontTable(defined_debts, calculated_debts, current_year_debts)
             self.window2.close()
+
+    def calculateFrontTable(self, defined_debts, calculated_debts, current_year_debts):
+        lst_past_year_debts = init_res_lst(self.front_table_upper)
+        get_summ_debts([calculated_debts, defined_debts], lst_past_year_debts)
+        for i in range(1, len(self.front_table_upper)):
+            self.tbl_front.setItem(1,i,self.createUnEditableItm(str(lst_past_year_debts[i-1].get("sum"))))
+        lst_current_year_debts = init_res_lst(self.front_table_upper)
+        get_summ_debts([current_year_debts], lst_current_year_debts)
+        for i in range(1, len(self.front_table_upper)):
+            self.tbl_front.setItem(14,i,self.createUnEditableItm(str(lst_current_year_debts[i-1].get("sum"))))
+        lst_total_debts = init_res_lst(self.front_table_upper)
+        get_summ_debts([calculated_debts, defined_debts, current_year_debts], lst_total_debts)
+        for i in range(1, len(self.front_table_upper)):
+            self.tbl_front.setItem(15,i,self.createUnEditableItm(str(lst_total_debts[i-1].get("sum"))))
 
     def cleanForm(self):
         self.cleanTable(self.tbl_front, 1)
@@ -236,11 +278,23 @@ class ClientCard(qg.QMainWindow, cci.Ui_MainWindow):
         self.cleanTable(self.tbl_back2, 0)
         self.cleanEdits()
         self.id = 0
+        self.setUneditableFrontItems(self.tbl_front)
 
     def cleanTable(self, tbl, start):
         for i in range (1, tbl.rowCount()):
             for j in range (start, tbl.columnCount()):
                 tbl.setItem(i,j,qg.QTableWidgetItem(""))
+
+    def setUneditableFrontItems(self, tbl):
+        tbl.setItem(1, 1, self.createUnEditableItm("", False))
+        tbl.setItem(1, 2, self.createUnEditableItm("", False))
+        tbl.setItem(1, 3, self.createUnEditableItm("", False))
+        tbl.setItem(14, 1, self.createUnEditableItm("", False))
+        tbl.setItem(14, 2, self.createUnEditableItm("", False))
+        tbl.setItem(14, 3, self.createUnEditableItm("", False))
+        tbl.setItem(15, 1, self.createUnEditableItm("", False))
+        tbl.setItem(15, 2, self.createUnEditableItm("", False))
+        tbl.setItem(15, 3, self.createUnEditableItm("", False))
 
     def cleanEdits(self):
         fields = {}
@@ -254,22 +308,52 @@ class ClientCard(qg.QMainWindow, cci.Ui_MainWindow):
         fields["street"] = ""
         fields["house"] = ""
         fields["building"]  = ""
+        fields["is_TSG_member"] = False
+        fields["is_rubbish_user"] = False
         self.setPersonInfo(fields)
 
     def closeEvent(self, event):
-        if (self.window2 is not None):
-            self.window2.close()
+        self.window2.close()
+        self.window3.close()
 
 # Create uneditable widget
-    def createUnEditableItm(self, text):
+    def createUnEditableItm(self, text, fnt_flag = True):
         itm = qg.QTableWidgetItem()
         itm.setText(text)
-        font = qg.QFont()
-        font.setWeight(65)
-        font.setPixelSize(12)
-        itm.setFont(font)
+        if (fnt_flag):
+            font = qg.QFont()
+            font.setWeight(65)
+            font.setPixelSize(12)
+            itm.setFont(font)
         itm = self.unEditItm(itm)
         return itm
+
+    def saveDebts(self):
+        try:
+            fields = {}
+            fields["year"] = self.window3.getYear()
+            fields["month"] = self.window3.getMonth()
+            fields["sum"] = self.window3.getDebt()
+            fields["type"] = self.window3.getType()
+            indexes = self.window2.tbl_search_res.selectionModel().selectedRows()
+            for i in range(len(indexes)):
+                cur_id = self.window2.id_lst[indexes[i].row()-1]
+                existing_debt = db.get_debts_by_filters(fields, cur_id)
+                print(existing_debt)
+                if (existing_debt != None):
+                    retval = self.showDialog(qg.QMessageBox.Warning,u"Запись для "+db.get_person_by_id(cur_id).get("surname")+
+                        u" уже присутствует и задолженность составляет "+str(existing_debt.get("sum"))+u". Заменить?",u"Внимание!", True)
+                    if (retval == 1024):
+                        db.update_debt(fields, cur_id)
+                else:
+                    db.insert_debt(fields, cur_id)
+            self.window2.close()
+            self.window3.close()
+            self.showDialog(qg.QMessageBox.Information,u"Данные о долгах успешно сохранены",u"База данных обновлена")
+            self.updClientCard()
+        except ValueError, e:
+            print(e)
+            self.showDialog(qg.QMessageBox.Critical,u"Некорректный формат ввода суммы",u"Ошибка")
 
 # Make widet uneditable
     def unEditItm(self, itm):
@@ -277,16 +361,24 @@ class ClientCard(qg.QMainWindow, cci.Ui_MainWindow):
         itm.setFlags(flg)
         return itm
 
+    def showAddDebtsWindow(self):
+        self.window3 = adh.addDebt(self.front_table_upper)
+        self.window3.btn_save_edit.clicked.connect(self.saveDebts)
+        self.window3.show()
+
     def showSearchWindow(self):
-        if self.window2 is None:
-            self.window2 = sci.searchWindow(self)
-            self.window2.btn_edit.clicked.connect(self.showClientCard)
+        self.window2 = sch.searchWindow(int(self.spn_year.value()))
+        self.window2.btn_edit.clicked.connect(self.showClientCard)
         self.window2.show()
 
-    def showDialog(self, dialog_type, text, title):
+    def showDialog(self, dialog_type, text, title, Cancel_btn_flag = False):
         msg = qg.QMessageBox()
         msg.setIcon(dialog_type)
         msg.setText(text)
         msg.setWindowTitle(title)
-        msg.setStandardButtons(qg.QMessageBox.Ok)
+        if (Cancel_btn_flag == True):
+            msg.setStandardButtons(qg.QMessageBox.Ok | qg.QMessageBox.Cancel)
+        else:
+            msg.setStandardButtons(qg.QMessageBox.Ok)
         retval = msg.exec_()
+        return retval
