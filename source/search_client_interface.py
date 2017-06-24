@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'search_window.ui'
 #
-# Created: Tue Jun 20 17:08:03 2017
+# Created: Sat Jun 24 11:02:42 2017
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -26,11 +26,11 @@ except AttributeError:
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
-        MainWindow.resize(1039, 394)
+        MainWindow.resize(1039, 364)
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setObjectName(_fromUtf8("centralwidget"))
         self.tbl_search_res = QtGui.QTableWidget(self.centralwidget)
-        self.tbl_search_res.setGeometry(QtCore.QRect(10, 100, 1011, 231))
+        self.tbl_search_res.setGeometry(QtCore.QRect(10, 60, 1011, 231))
         self.tbl_search_res.setSizeIncrement(QtCore.QSize(0, 0))
         self.tbl_search_res.setBaseSize(QtCore.QSize(0, 0))
         self.tbl_search_res.setRowCount(0)
@@ -46,19 +46,19 @@ class Ui_MainWindow(object):
         self.tbl_search_res.verticalHeader().setSortIndicatorShown(False)
         self.tbl_search_res.verticalHeader().setStretchLastSection(False)
         self.label = QtGui.QLabel(self.centralwidget)
-        self.label.setGeometry(QtCore.QRect(20, 20, 81, 16))
+        self.label.setGeometry(QtCore.QRect(20, 20, 81, 21))
         self.label.setObjectName(_fromUtf8("label"))
         self.ln_name = QtGui.QLineEdit(self.centralwidget)
-        self.ln_name.setGeometry(QtCore.QRect(110, 20, 113, 23))
+        self.ln_name.setGeometry(QtCore.QRect(110, 20, 211, 23))
         self.ln_name.setObjectName(_fromUtf8("ln_name"))
         self.btn_edit = QtGui.QPushButton(self.centralwidget)
-        self.btn_edit.setGeometry(QtCore.QRect(20, 340, 121, 31))
+        self.btn_edit.setGeometry(QtCore.QRect(740, 300, 281, 31))
         self.btn_edit.setObjectName(_fromUtf8("btn_edit"))
         self.label_2 = QtGui.QLabel(self.centralwidget)
-        self.label_2.setGeometry(QtCore.QRect(20, 50, 81, 16))
+        self.label_2.setGeometry(QtCore.QRect(350, 20, 81, 21))
         self.label_2.setObjectName(_fromUtf8("label_2"))
         self.ln_adress = QtGui.QLineEdit(self.centralwidget)
-        self.ln_adress.setGeometry(QtCore.QRect(110, 50, 113, 23))
+        self.ln_adress.setGeometry(QtCore.QRect(440, 20, 221, 23))
         self.ln_adress.setText(_fromUtf8(""))
         self.ln_adress.setObjectName(_fromUtf8("ln_adress"))
         MainWindow.setCentralWidget(self.centralwidget)
@@ -70,8 +70,8 @@ class Ui_MainWindow(object):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow", None))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Поиск по базе данных", None))
         self.label.setText(_translate("MainWindow", "Фамилия:", None))
         self.btn_edit.setText(_translate("MainWindow", "Редактировать", None))
-        self.label_2.setText(_translate("MainWindow", "Адрес:", None))
+        self.label_2.setText(_translate("MainWindow", "Улица:", None))
 

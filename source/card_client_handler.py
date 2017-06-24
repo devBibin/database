@@ -82,9 +82,11 @@ class ClientCard(qg.QMainWindow, cci.Ui_MainWindow):
 
     def addBack1Row(self):
         self.tbl_back1.setRowCount(self.tbl_back1.rowCount()+ 1)
+        self.cleanRow(self.tbl_back1, self.tbl_back1.rowCount()-1, 0)
 
     def addBack2Row(self):
         self.tbl_back2.setRowCount(self.tbl_back2.rowCount()+ 1)
+        self.cleanRow(self.tbl_back2, self.tbl_back2.rowCount()-1, 0)
 
     def saveInfo(self):
         client_fields = self.getPersonInfo()
@@ -202,8 +204,9 @@ class ClientCard(qg.QMainWindow, cci.Ui_MainWindow):
 
     def setTableInfo(self, fields_list, tbl, setData, start_row = 0, finish_row = float("Inf")):
         i = start_row
+        row = 0
         for el in (fields_list):
-            row = setData(el, i, tbl)
+            setData(el, i, tbl)
             i = i + 1
 
     def setFrontRow(self, fields, i, tbl):
@@ -222,12 +225,16 @@ class ClientCard(qg.QMainWindow, cci.Ui_MainWindow):
 
     def setBack1Row(self, fields, i, tbl):
         row = self.getperiodRow(tbl, fields.get("period"))
+        if (tbl.rowCount() - row == 1):
+            self.addBack1Row()
         tbl.setItem(row,0,qg.QTableWidgetItem(fields.get("period")))
         column = self.back1_table_upper.index(fields.get("type"))
         tbl.setItem(row,column,qg.QTableWidgetItem(str(fields.get("sum"))))
         return row
 
     def setBack2Row(self, fields, i, tbl):
+        if (tbl.rowCount() - i == 1):
+            self.addBack2Row()
         tbl.setItem(i,0,qg.QTableWidgetItem(fields.get("name")))
         tbl.setItem(i,1,qg.QTableWidgetItem(str(fields.get("sum"))))
         return i
@@ -285,6 +292,10 @@ class ClientCard(qg.QMainWindow, cci.Ui_MainWindow):
             for j in range (start, tbl.columnCount()):
                 tbl.setItem(i,j,qg.QTableWidgetItem(""))
 
+    def cleanRow(self, tbl, row, start):
+        for j in range (start, tbl.columnCount()):
+            tbl.setItem(row,j,qg.QTableWidgetItem(""))
+
     def setUneditableFrontItems(self, tbl):
         tbl.setItem(1, 1, self.createUnEditableItm("", False))
         tbl.setItem(1, 2, self.createUnEditableItm("", False))
@@ -313,20 +324,10 @@ class ClientCard(qg.QMainWindow, cci.Ui_MainWindow):
         self.setPersonInfo(fields)
 
     def closeEvent(self, event):
-        self.window2.close()
-        self.window3.close()
-
-# Create uneditable widget
-    def createUnEditableItm(self, text, fnt_flag = True):
-        itm = qg.QTableWidgetItem()
-        itm.setText(text)
-        if (fnt_flag):
-            font = qg.QFont()
-            font.setWeight(65)
-            font.setPixelSize(12)
-            itm.setFont(font)
-        itm = self.unEditItm(itm)
-        return itm
+        try:
+            self.window2.close()
+        finally:
+            self.window3.close()
 
     def saveDebts(self):
         try:
@@ -354,6 +355,18 @@ class ClientCard(qg.QMainWindow, cci.Ui_MainWindow):
         except ValueError, e:
             print(e)
             self.showDialog(qg.QMessageBox.Critical,u"Некорректный формат ввода суммы",u"Ошибка")
+
+# Create uneditable widget
+    def createUnEditableItm(self, text, fnt_flag = True):
+        itm = qg.QTableWidgetItem()
+        itm.setText(text)
+        if (fnt_flag):
+            font = qg.QFont()
+            font.setWeight(65)
+            font.setPixelSize(12)
+            itm.setFont(font)
+        itm = self.unEditItm(itm)
+        return itm
 
 # Make widet uneditable
     def unEditItm(self, itm):

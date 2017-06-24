@@ -77,7 +77,7 @@ class Ui_MainWindow(object):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow", None))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Добавить долг", None))
         self.btn_save_edit.setText(_translate("MainWindow", "ОК", None))
         self.label_4.setText(_translate("MainWindow", "Тип:", None))
         self.label_2.setText(_translate("MainWindow", "Год:", None))

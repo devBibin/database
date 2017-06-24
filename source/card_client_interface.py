@@ -245,7 +245,7 @@ class Ui_MainWindow(object):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow", None))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Карточка клиента", None))
         self.btn_save.setText(_translate("MainWindow", "Сохранить", None))
         __sortingEnabled = self.tbl_front.isSortingEnabled()
         self.tbl_front.setSortingEnabled(False)
